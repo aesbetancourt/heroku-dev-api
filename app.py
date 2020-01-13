@@ -14,7 +14,6 @@ def get_prediction(model, input_json):
     pro_exp = input_json['pro_exp']
     developer = np.array([[dev_quality, dev_on_time, team_chemistry, dev_exp, pro_exp]])
     success = "{:.0f}".format(float(str(model.predict(developer)[0][0])))
-
     return success
 
 
@@ -27,20 +26,46 @@ dev_model = load_model('model.h5')
 
 # API
 # This is a sample link to get results in JSON format from the API
-# http://host:port/?quality=23&times=68&chemistry=53&skills=40&reqs=80
+# http://host:port/?qy=23&tms=68&tch=53&sk=40&rqs=80
 @app.route('/')
 # Return a json containing the given params and the prediction result
 def prediction():
     # Defining content dictionary
     content = dict()
-    content['code_quality'] = float(request.args.get('quality'))
-    content['dev_on_time'] = float(request.args.get('times'))
-    content['team_chemistry'] = float(request.args.get('chemistry'))
-    content['dev_exp'] = float(request.args.get('skills'))
-    content['pro_exp'] = float(request.args.get('reqs'))
-    # Ask to the model
-    result = get_prediction(model=dev_model, input_json=content)
-    content['accomplishment'] = result
+    err_msg = ""
+    err = 0
+    args = [request.args.get('qy'), request.args.get('tms'), request.args.get('tch'),
+            request.args.get('sk'), request.args.get('rqs')]
+    # Handling exceptions
+    for arg in args:
+        # NoneType Object
+        if arg is None:
+            err = 1
+            try:
+                raise TypeError("Cannot support NoneType object. Missing arguments.")
+            except TypeError as e:
+                err_msg = str(e)
+            break
+        # Not a number
+        try:
+            arg = float(arg)
+        except ValueError as e:
+            err = 1
+            err_msg = str(e)
+            break
+
+    content['ERROR_STATUS'] = err
+    if not(content['ERROR_STATUS']):
+        content['code_quality'] = float(args[0])
+        content['dev_on_time'] = float(args[1])
+        content['team_chemistry'] = float(args[2])
+        content['dev_exp'] = float(args[3])
+        content['pro_exp'] = float(args[4])
+        # If there isn't any error then ask to the model
+        result = get_prediction(model=dev_model, input_json=content)
+        content['accomplishment'] = result
+    else:
+        content['ERROR_MSG'] = err_msg
     json_data = dumps(content)
     return json_data
 
