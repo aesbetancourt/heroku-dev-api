@@ -2,6 +2,7 @@
 from flask import Flask, request
 from tensorflow.keras.models import load_model
 from json import dumps
+import numpy as np
 
 
 # Return a prediction from the model given args
@@ -11,7 +12,7 @@ def get_prediction(model, input_json):
     team_chemistry = input_json['team_chemistry']
     dev_exp = input_json['dev_exp']
     pro_exp = input_json['pro_exp']
-    developer = [[dev_quality, dev_on_time, team_chemistry, dev_exp, pro_exp]]
+    developer = np.array([[dev_quality, dev_on_time, team_chemistry, dev_exp, pro_exp]])
     success = "{:.0f}".format(float(str(model.predict(developer)[0][0])))
 
     return success
@@ -19,8 +20,6 @@ def get_prediction(model, input_json):
 
 # Creating a Flask instance app
 app = Flask(__name__)
-# Configure a secret SECRET_KEY
-app.config['SECRET_KEY'] = 'e797d54d7a81d35ac8fdd655'
 
 # Loading the model
 dev_model = load_model('model.h5')
