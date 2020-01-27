@@ -35,7 +35,7 @@ def prediction():
     err_msg = ""
     err = 0
     args = [request.args.get('qy'), request.args.get('tms'), request.args.get('tch'),
-            request.args.get('sk'), request.args.get('rqs')]
+            request.args.get('sk'), request.args.get('rqs'), request.args.get('num')]
     # Handling exceptions
     for arg in args:
         # NoneType Object
@@ -61,6 +61,7 @@ def prediction():
         content['team_chemistry'] = float(args[2])
         content['dev_exp'] = float(args[3])
         content['pro_exp'] = float(args[4])
+        content['num'] = int(args[5])
         # If there isn't any error then ask to the model
         result = get_prediction(model=dev_model, input_json=content)
         content['accomplishment'] = result
