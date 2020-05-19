@@ -4,12 +4,23 @@ from tensorflow.keras.models import load_model
 from json import dumps
 import numpy as np
 
-error_msg = ""
-error = 0
+
+# Return a prediction from the model given args
+def get_prediction(model, input_json, names):
+    arg1 = input_json[names[0]]
+    arg2 = input_json[names[1]]
+    arg3 = input_json[names[2]]
+    arg4 = input_json[names[3]]
+    arg5 = input_json[names[4]]
+    input_features = np.array([[arg1, arg2, arg3, arg4, arg5]])
+    prediction_result = "{:.0f}".format(float(str(model.predict(input_features)[0][0])))
+    return prediction_result
+
+
 # Check if all values are good
 def check_lists(arr):
-    global error_msg
-    global error
+    error = 0
+    error_msg = ""
     for arg in arr:
         # NoneType Object
         if arg is None:
@@ -27,18 +38,6 @@ def check_lists(arr):
             error_msg = str(e)
             break
     return error, error_msg
-
-
-# Return a prediction from the model given args
-def get_prediction(model, input_json, names):
-    dev_quality = input_json[names[0]]
-    dev_on_time = input_json[names[1]]
-    team_chemistry = input_json[names[2]]
-    dev_exp = input_json[names[3]]
-    pro_exp = input_json[names[4]]
-    developer = np.array([[dev_quality, dev_on_time, team_chemistry, dev_exp, pro_exp]])
-    success = "{:.0f}".format(float(str(model.predict(developer)[0][0])))
-    return success
 
 
 # Creating a Flask instance app
@@ -62,58 +61,40 @@ effort_model = load_model('models/effort_predictor.h5')
 def prediction():
     # Defining content dictionary
     content = dict()
-    err = 0
-    err_msg = ""
 
     args = [
         request.args.get('model'),
-        request.args.get('arg1'),  # M1:
-        request.args.get('arg2'),  #
-        request.args.get('arg3'),  #
-        request.args.get('arg4'),  #
-        request.args.get('arg5'),  #
-        request.args.get('arg6')   #
+        request.args.get('arg1'),  # M1: code quality         # M2: team experience
+        request.args.get('arg2'),  # M1: dev on time          # M2: manager experience
+        request.args.get('arg3'),  # M1: team chemistry       # M2: lenght
+        request.args.get('arg4'),  # M1: dev experience       # M2: entities
+        request.args.get('arg5'),  # M1: project experience   # M2: languages
+        request.args.get('arg6')  # M1: developer number (Helper, not required in model 2)
     ]
 
-    # args = [request.args.get('qy'), request.args.get('tms'), request.args.get('tch'),
-    #         request.args.get('sk'), request.args.get('rqs'), request.args.get('num')]
-    #
-    # args = [request.args.get('texp'), request.args.get('mexp'), request.args.get('len'),
-    #         request.args.get('ent'), request.args.get('langs')]
-    # Handling exceptions
-
-    # model1_info = list()
-    # model2_info = list()
-
     if args[0] == "1":
-        model = 'dev_model'
-        model1_info = [args[1], args[2], args[3], args[4], args[5], args[6]]
-        err, err_msg = check_lists(model1_info)
+        model_name = 'dev_model'
+        model1_data = [args[1], args[2], args[3], args[4], args[5], args[6]]
+        err, err_msg = check_lists(model1_data)
         headers = ['code_quality', 'dev_on_time', 'team_chemistry', 'dev_exp', 'pro_exp', 'num']
-        # print(err, err_msg, model1_info)
     elif args[0] == "2":
-        model = 'effort_model'
-        model2_info = [args[1], args[2], args[3], args[4], args[5]]
-        err, err_msg = check_lists(model2_info)
+        model_name = 'effort_model'
+        model2_data = [args[1], args[2], args[3], args[4], args[5]]
+        err, err_msg = check_lists(model2_data)
         headers = ['team_exp', 'manager_exp', 'lenght', 'entities', 'language']
     else:
         err = 1
         err_msg = "Model selection error"
+        model_name = "No selected Model"
+        headers = []
 
     content['ERROR_STATUS'] = err
     content['DNN_MODEL'] = args[0]
-    content['SELECTED_MODEL'] = model
+    content['SELECTED_MODEL'] = model_name
     if not (content['ERROR_STATUS']):
         for i in range(len(headers)):
-            content[headers[i]] = float(args[i+1])
-
-            # content['code_quality'] = float(args[0])
-            # content['dev_on_time'] = float(args[1])
-            # content['team_chemistry'] = float(args[2])
-            # content['dev_exp'] = float(args[3])
-            # content['pro_exp'] = float(args[4])
-            # content['num'] = int(args[5])
-        # If there isn't any error then ask to the model
+            content[headers[i]] = float(args[i + 1])
+        # If there isn't any error then ask to the selected model
         if content['DNN_MODEL'] == '1':
             result = get_prediction(model=dev_model, input_json=content, names=headers)
         else:
