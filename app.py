@@ -62,14 +62,15 @@ def prediction():
     # Defining content dictionary
     content = dict()
 
+    # Get the params sent in the url
     args = [
-        request.args.get('model'),
+        request.args.get('model'),  # Model selection parameter (1, 2)
         request.args.get('arg1'),  # M1: code quality         # M2: team experience
         request.args.get('arg2'),  # M1: dev on time          # M2: manager experience
         request.args.get('arg3'),  # M1: team chemistry       # M2: lenght
         request.args.get('arg4'),  # M1: dev experience       # M2: entities
         request.args.get('arg5'),  # M1: project experience   # M2: languages
-        request.args.get('arg6')  # M1: developer number (Helper, not required in model 2)
+        request.args.get('arg6')   # M1: developer number (App Helper, not required in model 2)
     ]
 
     if args[0] == "1":
@@ -99,7 +100,7 @@ def prediction():
             result = get_prediction(model=dev_model, input_json=content, names=headers)
         else:
             result = get_prediction(model=effort_model, input_json=content, names=headers)
-        content['accomplishment'] = result
+        content['result'] = result
     else:
         content['ERROR_MSG'] = err_msg
     json_data = dumps(content)
